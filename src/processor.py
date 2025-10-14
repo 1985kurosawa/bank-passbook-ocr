@@ -1,3 +1,4 @@
+
 from datetime import datetime
 from .gemini_client import extract_table_with_report
 from .template_resolver import infer_template
@@ -6,14 +7,20 @@ from .config import (UNKNOWN_TEMPLATE_CONF_THRESHOLD, LOW_ROW_CONFIDENCE,
                      ENABLE_TEMPLATE_RERUN, MAX_RERUNS)
 
 def process_pdf(pdf_path: str, out_xlsx: str, dry_run: bool=False):
-    r1 = extract_table_with_report(b"", template_hint=None)
+    pdf_bytes = b""
+    if not dry_run:
+        with open(pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+
+    r1 = extract_table_with_report(pdf_bytes, template_hint=None)
     guess = infer_template(r1["report"], r1["headers"])
     low_idx = [i for i,c in enumerate(r1["row_confidences"]) if c < LOW_ROW_CONFIDENCE]
 
     result = r1
     reruns = 0
     if ENABLE_TEMPLATE_RERUN and guess.score >= UNKNOWN_TEMPLATE_CONF_THRESHOLD and MAX_RERUNS > 0:
-        result = extract_table_with_report(b"", template_hint="dummy")
+        hint = f"{guess.bank}:{guess.template}" if guess.bank and guess.template else None
+        result = extract_table_with_report(pdf_bytes, template_hint=hint)
         reruns = 1
 
     if guess.score < UNKNOWN_TEMPLATE_CONF_THRESHOLD or low_idx:

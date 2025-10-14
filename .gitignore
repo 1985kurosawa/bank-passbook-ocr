@@ -5,3 +5,9 @@ __pycache__/
 .DS_Store
 output/
 feedback/candidates/*.xlsx
+input/
+feedback/candidates/
+src/__pycache__/
+input/
+feedback/candidates/
+src/__pycache__/
